@@ -1,5 +1,7 @@
 package ru.croc.jws.messenger.client;
 
+import ru.croc.jws.messenger.common.Message;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -10,36 +12,33 @@ import java.util.Scanner;
 
 public class Client {
 
-	private static final String HOST = "localhost";
-	private static final int PORT = 7777;
+	private final String host;
+	private final int port;
 
-	public static void main(String[] args) throws IOException {
+	public Client() {
+		this("localhost", 7777);
+	}
 
-		Scanner s = new Scanner(System.in);
-		System.out.print("Username: ");
-		String username = s.nextLine();
+	public Client(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
 
-		System.out.println();
-		while (true) {
-			System.out.print("> ");
-			String message = s.nextLine();
-			if (message == null || message.isEmpty())
-				continue;
-			if (message.equals(".")) // exit
-				break;
+	public void sendMessage(Message message) throws IOException {
+		if (message == null)
+			throw new IllegalArgumentException("message is null");
 
-			// send message
-			message = message.replaceAll("\n", " ");
-			try (Socket socket = new Socket(HOST, PORT)) {
-				OutputStream out = socket.getOutputStream();
-				try (Writer w = new OutputStreamWriter(out)) {
-					w.write("0");
-					w.write("\n");
-					w.write(username);
-					w.write("\n");
-					w.write(message);
-					w.write("\n");
-				}
+		// send message
+		try (Socket socket = new Socket(host, port)) {
+			OutputStream out = socket.getOutputStream();
+			try (Writer w = new OutputStreamWriter(out)) {
+				w.write("0");
+				w.write("\n");
+				w.write(message.getUser().getName());
+				w.write("\n");
+				String messageText = message.getText().replaceAll("\n", " ");
+				w.write(messageText);
+				w.write("\n");
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 package ru.croc.jws.messenger.client;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -25,11 +26,22 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import ru.croc.jws.messenger.common.Message;
+import ru.croc.jws.messenger.common.User;
 
 public class App extends Application {
 
+	private Client client;
+
+	private User user;
+
 	public static void main(String[] args) {
 		launch(args);
+	}
+
+	public App() {
+		this.client = new Client("localhost", 7777);
+		this.user = new User("anonymous");
 	}
 
 	@Override
@@ -62,26 +74,38 @@ public class App extends Application {
 				new Date());
 		chatBox.getChildren().add(messageFromDaisy);
 
-		TextField message = new TextField();
-		message.setPrefWidth(maxWidth);
-		grid.add(message, 0, 2);
+		TextField messageField = new TextField();
+		messageField.setPrefWidth(maxWidth);
+		grid.add(messageField, 0, 2);
 
 		Button send = new Button("Say!");
 		send.setMinWidth(70);
 		send.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				String text = message.getText();
-				VBox messageFromDaisy = createMessageBox(
-						"me",
-						text,
-						new Date());
-				chatBox.getChildren().add(messageFromDaisy);
+				String text = messageField.getText();
+
+				Message message = new Message(user, text);
+				VBox messageBox = createMessageBox(
+						message.getUser().getName(),
+						message.getText(),
+						message.getTime());
+				chatBox.getChildren().add(messageBox);
 				scroll.setVvalue(1.0);
-				message.setText("");
+
+				try {
+					client.sendMessage(message);
+					messageField.setText("");
+				} catch (IOException e) {
+					messageBox.setBackground(new Background(new BackgroundFill(
+							Color.RED,
+							new CornerRadii(8),
+							Insets.EMPTY)));
+					e.printStackTrace();
+				}
 			}
 		});
-		message.setOnKeyPressed(new EventHandler<KeyEvent>() {
+		messageField.setOnKeyPressed(new EventHandler<KeyEvent>() {
 			@Override
 			public void handle(KeyEvent event) {
 				if (event.getCode().equals(KeyCode.ENTER))
